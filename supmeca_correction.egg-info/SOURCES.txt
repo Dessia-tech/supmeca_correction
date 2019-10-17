@@ -1,0 +1,6 @@
+setup.py
+supmeca_correction/__init__.py
+supmeca_correction.egg-info/PKG-INFO
+supmeca_correction.egg-info/SOURCES.txt
+supmeca_correction.egg-info/dependency_links.txt
+supmeca_correction.egg-info/top_level.txt
