@@ -12,14 +12,11 @@ Created on Thu Oct 17 18:27:17 2019
 """
 
 from setuptools import setup
-
 import re
-
 
 def readme():
     with open('README.rst') as f:
         return f.read()
-
 
 tag_re = re.compile(r'\btag: %s([0-9][^,]*)\b')
 version_re = re.compile('^Version: (.+)$', re.M)
@@ -32,4 +29,4 @@ setup(name='supmeca_correction',
       author='Ghislain Jézéquel',
       author_email='jezequel@dessia.tech',
       packages=['supmeca_correction'],
-      install_requires=[''])
+      install_requires=['matplotlib'])
