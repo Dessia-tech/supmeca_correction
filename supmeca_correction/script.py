@@ -5,23 +5,44 @@ Created on Sun Sep 29 21:37:49 2019
 
 @author: jezequel
 """
-import objects
+from objects_enhanced_babylon import Accessory, Gear, Drive, Reductor, ShaftAssembly, Shaft
+from optimization import Optimizer
+from itertools import product, permutations, combinations
+#import matplotlib.pyplot as plt
+#from matplotlib import patches
 
-shaft1 = objects.Shaft((0.1, 0.3))
-shaft2 = objects.Shaft((0.3, 0.4))
-shaft3 = objects.Shaft((0.2, 0.6))
+engine = Accessory(diameter=0.30, length=0.050, speed=4000, name='Engine')
+accessories = [Accessory(diameter=0.15, length=0.050, speed=2000, name='Fuel Pump'),
+               Accessory(diameter=0.12, length=0.050, speed=3500, name='Starter')]
 
-gear1 = objects.Gear(0.1, 0.03)
-gear2 = objects.Gear(0.2, 0.05)
-gear3 = objects.Gear(0.1, 0.05)
+shaft0 = Shaft(0, 0)
+gear0 = Gear(0.010, 0.010)
 
-mel = objects.Accessory(0.05, 0.1, 10, 10, 'mel')
+shaft1 = Shaft(0.0075, 0)
 
-drive = objects.Drive(gear1, gear2)
+gear11 = Gear(0.005, 0.010)
+gear12 = Gear(0.015, 0.010)
 
-sa1 = objects.ShaftAssembly(shaft1, [gear1], mel)
-sa2 = objects.ShaftAssembly(shaft2, [gear2, gear3])
+shaft2 = Shaft(0.0075+0.025, 0)
+gear2 = Gear(0.010, 0.010)
 
-reductor = objects.Reductor([sa1, sa2], [drive])
+sa0 = ShaftAssembly(shaft0, [gear0], engine)
+sa1 = ShaftAssembly(shaft1, [gear11, gear12], accessories[0])
+sa2 = ShaftAssembly(shaft2, [gear2], accessories[1])
 
-reductor.plot()
+drive0 = Drive(gear0, gear11)
+drive1 = Drive(gear12, gear2)
+
+
+reductor = Reductor([sa0, sa1, sa2], [drive0, drive1])
+limits = {'minimum' : {'x' : 0.2, 'y' : 0.05},
+          'maximum' : {'x' : 0.4, 'y' : 0.3}}
+
+optimizer = Optimizer(reductor=reductor, limits=limits)
+
+res = optimizer.minimize(1000)
+print(res.success)
+print([gear.diameter for sa in optimizer.reductor.shaft_assemblies for gear in sa.gears])
+print(optimizer.reductor.speeds())
+
+optimizer.reductor.plot()
