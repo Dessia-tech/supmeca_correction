@@ -8,10 +8,6 @@ Created on Thu Nov 14 12:10:01 2019
 from scipy.optimize import minimize
 import numpy as npy
 
-class Generator:
-    def __init__(self, specs):
-        self.specs = specs
-
 class Optimizer:
     def __init__(self, reductor, limits):
         self.reductor = reductor
@@ -35,6 +31,35 @@ class Optimizer:
         for i_arbre, speed in enumerate(speeds):
             fonctionnelle += (self.output_objectives[i_arbre] - speed)**2
 
+        # Entraxe max sur x
+        full_center_distance = self.reductor.full_center_distance()
+        max_limit_x = self.limits['maximum']['x'] - full_center_distance
+        if max_limit_x < 0:
+            fonctionnelle += (max_limit_x*1e3)**2
+
+        min_limit_x = full_center_distance - self.limits['minimum']['x']
+        if min_limit_x < 0:
+            fonctionnelle += (min_limit_x*1e3)**2
+
+        # Diametres inférieurs à l'espace disponible
+        for sa in self.reductor.shaft_assemblies:
+            for gear in sa.gears:
+                max_limit_y = self.limits['maximum']['y'] - gear.diameter
+                if max_limit_y < 0:
+                    fonctionnelle += (max_limit_y*1e3)**2
+                min_limit_y = gear.diameter - self.limits['minimum']['y']
+                if min_limit_y < 0:
+                    fonctionnelle += (min_limit_y*1e3)**2
+
+        # Contraintes accessoires
+        for i_drive, drive in enumerate(self.reductor.drives):
+            center_distance = drive.center_distance()
+            r1 = self.reductor.shaft_assemblies[i_drive].accessory.diameter/2
+            r2 = self.reductor.shaft_assemblies[i_drive+1].accessory.diameter/2
+            accessory_distance = r2 + r1
+            gap = center_distance - accessory_distance
+            if gap < 0:
+                fonctionnelle += (gap*1e3)**2
         return fonctionnelle
 
     def cond_init(self):

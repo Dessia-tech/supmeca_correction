@@ -11,13 +11,18 @@ import math
 import volmdlr as vm
 import volmdlr.primitives3D as p3d
 import volmdlr.primitives2D as p2d
+from itertools import permutations
 
 # =============================================================================
 
 class Shaft:
-    def __init__(self, pos_x, pos_y):
+    """
+    Arbre
+    """
+    def __init__(self, pos_x, pos_y, name=''):
         self.pos_x = pos_x
         self.pos_y = pos_y
+        self.name = name
 
     def plot(self, ax=None):
         if ax is None:
@@ -37,6 +42,9 @@ class Shaft:
 # =============================================================================
 
 class Accessory:
+    """
+    Accessoire
+    """
     def __init__(self, diameter, length, speed, torque=0, name=''):
         self.diameter = diameter
         self.length = length
@@ -70,16 +78,26 @@ class Accessory:
 # =============================================================================
 
 class Drive:
+    """
+    Relation d'engrènement
+    """
     def __init__(self, gear1, gear2, name=''):
         self.gear1 = gear1
         self.gear2 = gear2
         self.gears = [gear1, gear2]
+        self.name = name
 
     def center_distance(self):
+        """
+        Calcule l'entraxe
+        """
         center_distance = (self.gear1.diameter + self.gear2.diameter)/2
         return center_distance
 
     def ratio(self):
+        """
+        Calcule le rapport de réduction
+        """
         ratio = self.gear1.diameter/self.gear2.diameter
         return ratio
 
@@ -90,6 +108,9 @@ class Drive:
         return positions
 
     def output_speed(self, input_speed):
+        """
+        Calcule la vitesse en sortie en fonction d'un régime moteur
+        """
         ratio = self.ratio()
         output_speed = ratio*input_speed
         return output_speed
@@ -97,20 +118,13 @@ class Drive:
 # =============================================================================
 
 class Gear:
-    def __init__(self, diameter, length, n_teeth=None, name=''):
+    """
+    Pignon
+    """
+    def __init__(self, diameter, length, name=''):
         self.diameter = diameter
         self.length = length
-        self.n_teeth = n_teeth
         self.name = name
-
-    def module(self):
-        module = self.diameter/self.n_teeth
-        return module
-
-    def step(self):
-        module = self.module()
-        step = math.pi*module
-        return step
 
     def volume(self):
         return self.diameter*math.pi*self.length
@@ -238,6 +252,9 @@ class ShaftAssembly:
 # =============================================================================
 
 class Reductor:
+    """
+    Architecture du réducteur
+    """
     def __init__(self, shaft_assemblies, drives, name=''):
         self.shaft_assemblies = shaft_assemblies
         self.drives = drives
@@ -247,6 +264,9 @@ class Reductor:
         self.link_shaft_assemblies()
 
     def speeds(self):
+        """
+        Calcule les vitesses sur chaque ligne d'arbre en fonctions du régime moteur
+        """
         ref_accessory = self.shaft_assemblies[0].accessory
         input_speed = ref_accessory.speed
 
@@ -258,6 +278,9 @@ class Reductor:
         return speeds
 
     def update(self, x):
+        """
+        Mets à jour l'architecture pendant l'optimisation
+        """
         gears = [gear for sa in self.shaft_assemblies for gear in sa.gears]
 
         for gear_diameter, gear in zip(x, gears):
@@ -266,18 +289,25 @@ class Reductor:
         self.link_shaft_assemblies()
 
     def full_center_distance(self):
+        """
+        Entraxe entre les deux lignes d'arbre les plus éloignées
+        """
         first_shaft = self.shaft_assemblies[0].shaft
         last_shaft = self.shaft_assemblies[-1].shaft
 
         return last_shaft.pos_x - first_shaft.pos_x
 
     def check(self):
+        """
+        Vérifie la bonne structure de l'architecture
+        """
         if len(self.drives)+1 != len(self.shaft_assemblies):
             raise Exception("Le nombre de shaft_assemblies et le nombre de drives \
                             ne correspondent pas")
 
         for i, (shaft_assembly1, shaft_assembly2) in enumerate(tuple(zip(self.shaft_assemblies[:-1], self.shaft_assemblies[1:]))):
             if self.drives[i].gear1 not in shaft_assembly1.gears:
+                print(i)
                 raise Exception("L'attribut drives ne correspond pas à l'ordre \
                                 indiqué par l'attribut shaft_assemblies")
             if self.drives[i].gear2 not in shaft_assembly2.gears:
@@ -285,6 +315,9 @@ class Reductor:
                                 indiqué par l'attribut shaft_assemblies")
 
     def link_shaft_assemblies(self):
+        """
+        Recalcule les positions des arbres
+        """
         for i, (shaft_assembly1, shaft_assembly2) in enumerate(tuple(zip(self.shaft_assemblies[:-1], self.shaft_assemblies[1:]))):
             drive = self.drives[i]
 
@@ -317,4 +350,44 @@ class Reductor:
         volumemodel.BabylonShow()
         return primitives
 
+    def mass(self):
+        """
+        Remplacez pass par votre code
+        """
+        pass
+
+    def cost(self):
+        """
+        Remplacez pass par votre code
+        """
+        pass
+
+    def performance(self):
+        """
+        Remplacez pass par votre code
+        """
+        pass
+
 # =============================================================================
+class Generator:
+    """
+    Génère des architectures non optimisées
+    """
+    def __init__(self, engine, accessories):
+        self.reductors = []
+        for permutation in list(permutations(accessories)):
+            input_shaft = Shaft(0, 0, name='Input shaft')
+            gear0 = Gear(0.010, 0.010, 'Gear 0')
+            shaft_assemblies = [ShaftAssembly(input_shaft, [gear0], engine, name='Input shaft assembly')]
+            for i, accessory in enumerate(permutation):
+                shaft = Shaft(0, 0, name='Shaft ' + str(i+1))
+                gear1 = Gear(0.010, 0.010, name='Gear ' + str(i+1) + '1')
+                gear2 = Gear(0.010, 0.010, name='Gear ' + str(i+1) + '2')
+                shaft_assemblies.append(ShaftAssembly(shaft, [gear1, gear2], accessory, name='Shaft Assembly ' + str(i+1)))
+
+            drives = []
+            for i, shaft_assembly in enumerate(shaft_assemblies[:-1]):
+                next_shaft_assembly = shaft_assemblies[i+1]
+                drives.append(Drive(shaft_assembly.gears[-1], next_shaft_assembly.gears[0], name='Drive ' + str(i)))
+            self.reductors.append(Reductor(shaft_assemblies, drives))
+
