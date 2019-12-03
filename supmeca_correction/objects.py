@@ -125,6 +125,7 @@ class Gear:
         self.diameter = diameter
         self.length = length
         self.name = name
+        self.n_teeth = None
 
     def volume(self):
         return self.diameter*math.pi*self.length
@@ -177,7 +178,7 @@ class Gear:
             rls_points.extend([new_pt1, new_pt2, new_pt4, new_pt5])
 
         rls_points.reverse()
-        rls = p2d.RoundedLineSegments2D(rls_points, {}, True)
+        rls = p2d.OpenedRoundedLineSegments2D(rls_points, {})
         outer_contour2d = vm.Contour2D([rls])
         extrusion = p3d.ExtrudedProfile(plane_origin, x, y, outer_contour2d, [], vector)
         primitives.append(extrusion)
@@ -235,7 +236,7 @@ class ShaftAssembly:
 
     def babylon(self):
         z_positions_dict = self.position_along_z()
-        xy_position = self.shaft.position
+        xy_position = (self.shaft.pos_x, self.shaft.pos_y)
         primitives = []
         shaft_length = self.shaft_length()
 
@@ -331,7 +332,8 @@ class Reductor:
             z_position_dict2 = shaft_assembly2.position_along_z()
             gear1_pos_z = z_position_dict1[drive.gear1]
             gear2_pos_z = z_position_dict2[drive.gear2]
-            shaft_assembly2.pos_z = gear1_pos_z - gear2_pos_z
+            if round(gear1_pos_z, 3) != round(gear2_pos_z, 3):
+                shaft_assembly2.pos_z = gear1_pos_z - gear2_pos_z
 
     def plot(self, ax=None):
         if ax is None:

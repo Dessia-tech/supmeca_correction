@@ -5,7 +5,7 @@ Created on Sun Sep 29 21:37:49 2019
 
 @author: jezequel
 """
-from objects_enhanced_babylon import Accessory, Gear, Drive, Reductor, ShaftAssembly, Shaft, Generator
+from objects import Accessory, Gear, Drive, Reductor, ShaftAssembly, Shaft, Generator
 from optimization import Optimizer
 import matplotlib.pyplot as plt
 from matplotlib import patches
